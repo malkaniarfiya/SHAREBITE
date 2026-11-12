@@ -4,7 +4,7 @@ ShareBite is a surplus food distribution website. It connects **food donors**, *
 
 College project by **Arfiya Malkani**: an HTML/CSS/JavaScript frontend, connected through a REST API to a Java backend, which stores its data in MySQL using JDBC.
 
-**Live site:** https://sharebite-u9z1.onrender.com
+**Live site:** https://sharebite-o798.onrender.com
 
 (Hosted on a free server that sleeps when unused, so the first visit can take about a minute to load.)
 
