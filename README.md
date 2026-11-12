@@ -2,11 +2,20 @@
 
 ShareBite is a surplus food distribution website. It connects **food donors**, **NGOs / food receivers** and **volunteers** so that extra food reaches people who need it instead of being wasted.
 
-College project: HTML/CSS/JavaScript frontend, connected through a REST API to a Java backend, which stores its data in MySQL using JDBC.
+College project by **Arfiya Malkani**: an HTML/CSS/JavaScript frontend, connected through a REST API to a Java backend, which stores its data in MySQL using JDBC.
 
 **Live site:** https://sharebite-u9z1.onrender.com
 
 (Hosted on a free server that sleeps when unused, so the first visit can take about a minute to load.)
+
+## Features
+
+- Sign up with email OTP verification, login, logout and password reset
+- Food donors post surplus food with pickup address, date and time
+- NGOs / food receivers request food for delivery
+- Volunteers register to pick up and deliver food
+- Dashboard listing the latest donations and food requests
+- Contact form, privacy policy and terms pages
 
 ## How it works
 
@@ -26,7 +35,7 @@ The web server uses only classes that come with the JDK (`com.sun.net.httpserver
 ## Project structure
 
 ```
-sharebite/
+SHAREBITE/
 ├── frontend/                 HTML, CSS and JavaScript (what the user sees)
 │   ├── index.html            Home page
 │   ├── login.html  signin.html  forgot_password.html
@@ -41,11 +50,14 @@ sharebite/
 │   ├── src/sharebite/        Java source code
 │   ├── database/             schema.sql (tables the backend creates) and sharbitedatabase.sql (original design)
 │   ├── lib/                  MySQL JDBC driver (run.bat downloads it the first time)
-│   ├── db.properties.example Database settings template (copy to db.properties)
+│   ├── db.properties.example Database settings template (run.bat creates db.properties)
+│   ├── mail.properties.example Email settings template for OTP emails
 │   ├── run.bat               Start on Windows
 │   └── run.sh                Start on macOS / Linux
-└── docs/
-    └── ShareBite_console_version.java    The first, console-only version of the backend
+├── docs/
+│   └── ShareBite_console_version.java    The first, console-only version of the backend
+├── Dockerfile                Build recipe used for online hosting (Render)
+└── LICENSE                   MIT License
 ```
 
 ### Backend classes
@@ -69,7 +81,14 @@ sharebite/
 | `Json` | Small JSON reader / writer |
 | `Reply`, `ApiException` | The reply or error sent back to the browser |
 
-## How to run
+## How to run on your computer
+
+Get the code:
+
+```
+git clone https://github.com/malkaniarfiya/SHAREBITE.git
+cd SHAREBITE
+```
 
 You need:
 
@@ -172,15 +191,27 @@ SELECT * FROM food_donor;
 
 ## OTP
 
-**Email mode:** if `backend/mail.properties` exists, the OTP is emailed to the address typed in the form. `Mailer.java` sends it through Gmail's SMTP server over an encrypted connection. To set it up, copy `mail.properties.example` to `mail.properties` and fill in a Gmail address and a Gmail app password (not the normal password).
+**Email mode:** when a Gmail account is set up, the OTP is emailed to the address typed in the form. `Mailer.java` connects to Gmail's SMTP server on port 587 and switches the connection to encryption with STARTTLS. To set it up locally, copy `mail.properties.example` to `mail.properties` and fill in a Gmail address and a Gmail app password (not the normal password). Online, the same values are set as environment variables.
 
-**Demo mode:** if `mail.properties` does not exist, the OTP is shown on the page and printed in the server console, so the project can be run without any email account.
+**Demo mode:** with no email account set up, the OTP is shown on the page and printed in the server console, so the project can be run without any email account.
+
+On Windows, `run.bat` starts Java with the Windows certificate store, so sending email still works when antivirus software scans email connections.
 
 In both modes an OTP is valid for 5 minutes, allows 5 wrong attempts, and a new one can be requested after 30 seconds.
 
 ## Settings
 
-Database settings are in `backend/db.properties`. Optional environment variables (see `.env.example`): `PORT`, `CORS_ALLOWED_ORIGINS`, `OTP_DEMO_MODE`, and `DB_URL`, `DB_USER`, `DB_PASSWORD` (these override `db.properties`).
+On a local computer, settings are read from `backend/db.properties` and `backend/mail.properties` (both kept out of GitHub by `.gitignore`). Environment variables override them:
+
+| Variable | Purpose |
+|----------|---------|
+| `DB_URL`, `DB_USER`, `DB_PASSWORD` | MySQL connection (JDBC) |
+| `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_PORT`, `MAIL_HOST` | Gmail account used to send OTP emails |
+| `OTP_DEMO_MODE` | `true` shows the OTP on the page when no email account is set up |
+| `PORT` | Port the server listens on (default 8080) |
+| `CORS_ALLOWED_ORIGINS` | Other addresses allowed to call the API |
+| `TRUST_PROXY` | `true` behind a hosting proxy, so the rate limit sees each visitor's real IP |
+| `FRONTEND_DIR` | Folder the website files are served from |
 
 ## Online hosting
 
@@ -192,16 +223,9 @@ The live site runs without any personal computer:
 | MySQL database | [Aiven](https://aiven.io) cloud MySQL |
 | OTP emails | Gmail SMTP |
 
-Every push to the `main` branch rebuilds and redeploys the site automatically.
+Render builds the site from the `main` branch using the `Dockerfile`, which compiles the Java code and downloads the MySQL JDBC driver. The site is served over HTTPS and the database connection uses SSL.
 
-Passwords are never stored in the repository. On Render they are set as environment variables:
-
-| Variable | Purpose |
-|----------|---------|
-| `DB_URL`, `DB_USER`, `DB_PASSWORD` | Connection to the cloud MySQL database (JDBC) |
-| `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_PORT` | Gmail account and app password used to send OTP emails |
-| `OTP_DEMO_MODE=false` | Never show the OTP on the page |
-| `TRUST_PROXY=true` | Read the visitor's real IP from Render's proxy (used by the rate limit) |
+Passwords are never stored in the repository. On Render they are set as the environment variables listed under Settings, with `OTP_DEMO_MODE=false` and `TRUST_PROXY=true`.
 
 ## Security points
 
@@ -213,14 +237,16 @@ Passwords are never stored in the repository. On Render they are set as environm
 - Login, OTP and form routes are rate limited (30 POST requests per minute per IP); an OTP expires in 5 minutes and after 5 wrong attempts.
 - Only files inside `frontend/` can be served (no `../` path tricks).
 - All SQL uses `PreparedStatement` with `?` placeholders (no SQL injection).
-- The database password is kept in `backend/db.properties`, which is in `.gitignore`, so it is never uploaded.
+- Database and email passwords are kept in `db.properties` / `mail.properties` (in `.gitignore`) or in the host's environment variables, never in the repository.
+- Security headers (Content-Security-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) are sent with every response.
 
 ## Limits of this version
 
-- The backend connects as the MySQL user in `db.properties`. A real deployment should use a separate MySQL user that can only access the `sharebite` database, not `root`.
 - Logins and OTPs are kept in memory, so restarting the server logs everyone out.
-- It runs over plain HTTP on localhost. A public deployment needs HTTPS.
+- The free hosting plan sleeps after 15 minutes without visitors; the next visit takes about a minute to load.
+- The backend connects with the database's admin user. A larger deployment should use a separate MySQL user that can only access the `sharebite` database.
+- There is no admin panel, and donors are not automatically matched to receivers.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Copyright (c) 2026 Arfiya Malkani. This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
