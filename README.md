@@ -220,3 +220,7 @@ Passwords are never stored in the repository. On Render they are set as environm
 - The backend connects as the MySQL user in `db.properties`. A real deployment should use a separate MySQL user that can only access the `sharebite` database, not `root`.
 - Logins and OTPs are kept in memory, so restarting the server logs everyone out.
 - It runs over plain HTTP on localhost. A public deployment needs HTTPS.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
