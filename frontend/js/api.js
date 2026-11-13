@@ -9,7 +9,7 @@
 // If the site is opened from the Java server (port 8080) the API is on the same address.
 // If it is opened some other way (for example VS Code Live Server on port 5500)
 // the API is on http://localhost:8080.
-const API_BASE = location.port === '8080' ? '' : 'http://localhost:8080';
+   const API_BASE = (location.protocol === 'file:' || location.port === '5500') ? 'http://localhost:8080' : '';
 
 /* ---------- login details (kept until the browser tab is closed) ---------- */
 
